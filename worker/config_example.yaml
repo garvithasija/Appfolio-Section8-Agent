@@ -1,0 +1,49 @@
+# Example configuration for form filling
+website_config:
+  url: "https://example-housing-portal.com/application"
+  
+  # Map Excel columns to CSS selectors on the website
+  field_mapping:
+    ApplicantFirstName: "#applicant_first_name"
+    ApplicantLastName: "#applicant_last_name"
+    DOB: "#date_of_birth"
+    Email: "#email_address"
+    Phone: "#phone_number"
+    Address: "#current_address"
+    City: "#city"
+    State: "#state"
+    ZipCode: "#zip_code"
+    AnnualIncome: "#annual_income"
+    HouseholdSize: "#household_size"
+    
+  # Submit button selector
+  submit_selector: "#submit_application"
+  
+  # Success confirmation selectors (optional)
+  success_indicators:
+    - ".success-message"
+    - ".confirmation-box"
+    - "#application-submitted"
+    
+  # Error message selectors (optional)
+  error_indicators:
+    - ".error-message"
+    - ".alert-danger"
+    - ".validation-error"
+    
+  # Settings
+  settings:
+    delay_between_rows: 3  # seconds to wait between processing rows
+    headless: false        # set to true for production
+    screenshot_on_error: true
+    screenshot_on_success: true
+    
+# Alternative configuration for different portals
+section8_portal_config:
+  url: "https://section8portal.example.com/apply"
+  field_mapping:
+    ApplicantFirstName: "input[name='firstName']"
+    ApplicantLastName: "input[name='lastName']"
+    DOB: "input[type='date'][name='birthDate']"
+    Email: "input[type='email'][name='email']"
+    Phone: "input[type='tel'][name='phone']"

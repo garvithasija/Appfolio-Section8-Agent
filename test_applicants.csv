@@ -1,0 +1,11 @@
+ApplicantFirstName,ApplicantLastName,DOB,Email,Phone,Address,City,State,ZipCode,AnnualIncome,HouseholdSize
+John,Smith,1985-03-15,john.smith@email.com,555-0101,123 Main St,Springfield,IL,62701,35000,3
+Jane,Doe,1990-07-22,jane.doe@email.com,555-0102,456 Oak Ave,Chicago,IL,60601,42000,2
+Michael,Johnson,1982-11-08,m.johnson@email.com,555-0103,789 Pine Rd,Peoria,IL,61602,28000,4
+Sarah,Williams,1995-01-30,s.williams@email.com,555-0104,321 Elm St,Rockford,IL,61101,38000,1
+David,Brown,1988-09-12,d.brown@email.com,555-0105,654 Maple Dr,Aurora,IL,60502,45000,5
+Lisa,Davis,1992-06-18,lisa.davis@email.com,555-0106,987 Cedar Ln,Joliet,IL,60432,32000,2
+Robert,Miller,1979-12-03,r.miller@email.com,555-0107,147 Birch Ave,Naperville,IL,60540,55000,4
+Emily,Wilson,1987-04-25,e.wilson@email.com,555-0108,258 Spruce St,Schaumburg,IL,60173,39000,3
+Thomas,Moore,1991-08-14,t.moore@email.com,555-0109,369 Willow Rd,Evanston,IL,60201,41000,2
+Ashley,Taylor,1986-11-07,a.taylor@email.com,555-0110,741 Poplar Dr,Waukegan,IL,60085,36000,3
