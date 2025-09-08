@@ -165,8 +165,8 @@ async def start_job(job_id: str, website_url: str = "https://sairealty.appfolio.
     if job_id in running_jobs or job["status"] in ["running", "starting"]:
         raise HTTPException(status_code=409, detail=f"Job {job_id} is already {job['status']}")
     
-    if job["status"] != "created":
-        raise HTTPException(status_code=409, detail=f"Job {job_id} status is {job['status']}, expected 'created'")
+    if job["status"] not in ["created", "error"]:
+        raise HTTPException(status_code=409, detail=f"Job {job_id} status is {job['status']}, expected 'created' or 'error'")
     
     # Add to running jobs IMMEDIATELY
     running_jobs.add(job_id)
