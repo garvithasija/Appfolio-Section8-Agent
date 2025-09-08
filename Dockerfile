@@ -2,8 +2,9 @@
 FROM node:18-alpine AS frontend-build
 
 # Build frontend
-WORKDIR /frontend
-COPY frontend/ ./
+WORKDIR /app
+COPY frontend/ ./frontend/
+WORKDIR /app/frontend
 RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --only=production; fi
 RUN npm run build
 
@@ -39,7 +40,7 @@ RUN playwright install --with-deps chromium
 # Copy application code
 COPY backend/ ./backend/
 COPY worker/ ./worker/
-COPY --from=frontend-build /frontend/build ./frontend/build
+COPY --from=frontend-build /app/frontend/build ./frontend/build
 
 # Create necessary directories
 RUN mkdir -p uploads screenshots job_results
