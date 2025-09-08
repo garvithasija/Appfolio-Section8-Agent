@@ -5,7 +5,8 @@ FROM node:18-alpine AS frontend-build
 WORKDIR /app
 COPY frontend/ ./frontend/
 WORKDIR /app/frontend
-RUN if [ -f package-lock.json ]; then npm ci --only=production; else npm install --only=production; fi
+RUN ls -la
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 RUN npm run build
 
 # Python backend with Playwright
