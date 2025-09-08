@@ -10,8 +10,6 @@ services:
     envVars:
       - key: PYTHONPATH
         value: "/app/worker:/app/backend"
-      - key: PLAYWRIGHT_BROWSERS_PATH
-        value: "/ms-playwright"
       - key: PORT
         value: "8000"
     disk:

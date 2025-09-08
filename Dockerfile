@@ -49,7 +49,6 @@ RUN mkdir -p uploads screenshots job_results
 
 # Set environment variables
 ENV PYTHONPATH="/app/worker:/app/backend"
-ENV PLAYWRIGHT_BROWSERS_PATH="/app/.cache/ms-playwright"
 
 # Expose port
 EXPOSE 8000
