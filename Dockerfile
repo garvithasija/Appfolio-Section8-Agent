@@ -36,7 +36,10 @@ COPY worker/requirements.txt ./worker/
 RUN pip install --no-cache-dir -r backend/requirements.txt -r worker/requirements.txt
 
 # Install Playwright browsers after pip install
-RUN python -m playwright install --with-deps chromium
+RUN python -m playwright install --with-deps chromium && \
+    python -c "import playwright; print('Playwright version:', playwright.__version__)" && \
+    ls -la /root/.cache/ms-playwright/ || echo "Browser cache not found" && \
+    find /root -name "*chromium*" -type d 2>/dev/null | head -5
 
 # Copy application code
 COPY backend/ ./backend/

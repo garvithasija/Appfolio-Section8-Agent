@@ -17,14 +17,33 @@ class FormFiller:
     async def initialize(self, headless: bool = True):
         """Initialize Playwright browser"""
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
-        self.playwright = await async_playwright().start()
-        print("✅ Playwright started")
-        self.browser = await self.playwright.chromium.launch(headless=headless)
-        print(f"✅ Browser launched (headless={headless})")
-        context = await self.browser.new_context()
-        print("✅ Browser context created")
-        self.page = await context.new_page()
-        print("✅ New page created - browser should be visible!")
+        try:
+            self.playwright = await async_playwright().start()
+            print("✅ Playwright started")
+            
+            # Check browser installation
+            import subprocess
+            result = subprocess.run(['python', '-m', 'playwright', 'install', '--help'], 
+                                  capture_output=True, text=True)
+            print(f"Playwright install command available: {result.returncode == 0}")
+            
+            # Try to launch browser with additional debugging
+            print("🔍 Attempting to launch Chromium...")
+            self.browser = await self.playwright.chromium.launch(
+                headless=headless,
+                args=['--no-sandbox', '--disable-dev-shm-usage'] if headless else []
+            )
+            print(f"✅ Browser launched (headless={headless})")
+            context = await self.browser.new_context()
+            print("✅ Browser context created")
+            self.page = await context.new_page()
+            print("✅ New page created - browser should be visible!")
+        except Exception as e:
+            print(f"❌ Browser initialization failed: {e}")
+            print(f"Error type: {type(e).__name__}")
+            import traceback
+            traceback.print_exc()
+            raise
     
     async def close(self):
         """Close browser and cleanup"""
