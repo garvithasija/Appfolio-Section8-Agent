@@ -3,7 +3,8 @@ FROM node:18-alpine AS frontend-build
 
 # Build frontend
 WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json ./
+COPY frontend/package-lock.json* ./
 RUN npm ci --only=production
 COPY frontend/ ./
 RUN npm run build
