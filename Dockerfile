@@ -1,14 +1,3 @@
-# Multi-stage build for Section 8 AppFolio Agent
-FROM node:18-alpine AS frontend-build
-
-# Build frontend
-WORKDIR /app
-COPY frontend/ ./frontend/
-WORKDIR /app/frontend
-RUN ls -la
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
-RUN npm run build
-
 # Python backend with Playwright
 FROM python:3.11-slim
 
@@ -41,7 +30,8 @@ RUN playwright install --with-deps chromium
 # Copy application code
 COPY backend/ ./backend/
 COPY worker/ ./worker/
-COPY --from=frontend-build /app/frontend/build ./frontend/build
+# Copy frontend static files (if they exist)
+COPY frontend/ ./frontend/
 
 # Create necessary directories
 RUN mkdir -p uploads screenshots job_results
