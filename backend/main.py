@@ -25,7 +25,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://section8-frontend.onrender.com",
-        "https://*.onrender.com"  # Allow any Render subdomain
+        "https://ahylith-section8-frontend.onrender.com",
+        "*"  # Allow all origins for now - can be restricted later
     ],
     allow_credentials=True,
     allow_methods=["*"],
