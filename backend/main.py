@@ -8,6 +8,7 @@ import uuid
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
+from collections import OrderedDict
 import asyncio
 
 try:
@@ -169,16 +170,17 @@ async def start_job(job_id: str, website_url: str = "https://sairealty.appfolio.
     # Default field mapping based on website
     if field_mapping is None:
         if "appfolio" in website_url or "sairealty" in website_url:
-            # AppFolio tenant receipts field mapping - Based on actual DOM elements
-            field_mapping = {
-                "TenantName": ".select2-container, .select2-selection__rendered",
-                "Amount": "#receivable_payment_amount",
-                "ReceiptDate": "#receivable_payment_occurred_on",
-                "Remarks": "#receivable_payment_remarks",
-                "Reference": "#receivable_payment_reference",
-                "CashAccount": "input[data-select2-id], .select2-search__field",
-                "PaymentType": "input[data-select2-id]:nth-of-type(2), .select2-search__field:nth-of-type(2)"
-            }
+            # AppFolio tenant receipts field mapping - Based on actual DOM inspection
+            # Ordered to fill Amount right after TenantName
+            field_mapping = OrderedDict([
+                ("TenantName", "#s2id_autogen3, .select2-focusser, .js-payer input[type='text']"),
+                ("Amount", "#receivable_payment_amount"),
+                ("ReceiptDate", "#receivable_payment_occurred_on"),
+                ("Remarks", "#receivable_payment_remarks"), 
+                ("Reference", "#receivable_payment_reference"),
+                ("CashAccount", "#s2id_autogen1, .select2-focusser"),  # Handled by choose_cash_account()
+                ("PaymentType", "#s2id_autogen2, .select2-focusser")   # Handled by choose_payment_type()
+            ])
         else:
             # Demo site field mapping
             field_mapping = {

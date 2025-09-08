@@ -1,1 +1,23 @@
-services: []
+services:
+  - type: web
+    name: section8-appfolio-agent
+    runtime: docker
+    dockerfilePath: ../Dockerfile
+    dockerContext: ../
+    plan: starter
+    region: oregon
+    branch: main
+    envVars:
+      - key: PYTHONPATH
+        value: "/app/worker:/app/backend"
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "/ms-playwright"
+      - key: PORT
+        value: "8000"
+    disk:
+      name: data
+      mountPath: /app/uploads
+      sizeGB: 1
+    healthCheckPath: /
+    autoDeploy: true
+    numInstances: 1

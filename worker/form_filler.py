@@ -109,6 +109,9 @@ class FormFiller:
                     if item_text and tenant_name.lower() in item_text.lower():
                         print(f"✅ Found matching tenant: {item_text}")
                         await item.click()
+                        # Add 5-second wait after tenant selection
+                        print("⏳ Waiting 5 seconds after tenant selection...")
+                        await self.page.wait_for_timeout(5000)
                         return
                 
                 # If no exact match, try clicking the first result
@@ -117,6 +120,9 @@ class FormFiller:
                     first_text = await first_result.text_content()
                     print(f"⚠️ No exact match, selecting first result: {first_text}")
                     await first_result.click()
+                    # Add 5-second wait after tenant selection
+                    print("⏳ Waiting 5 seconds after tenant selection...")
+                    await self.page.wait_for_timeout(5000)
                 else:
                     print(f"❌ No search results found for tenant: {tenant_name}")
                     
@@ -125,6 +131,9 @@ class FormFiller:
                 # Try pressing Enter to select first match
                 await self.page.keyboard.press("ArrowDown")
                 await self.page.keyboard.press("Enter")
+                # Add 5-second wait after tenant selection
+                print("⏳ Waiting 5 seconds after tenant selection...")
+                await self.page.wait_for_timeout(5000)
                 
         except Exception as e:
             print(f"❌ Failed to handle tenant search: {str(e)}")
@@ -227,6 +236,140 @@ class FormFiller:
             print(f"❌ Failed to handle {field_name} dropdown: {str(e)}")
             raise e
     
+    async def choose_cash_account(self, value: str):
+        """
+        Select cash account using AppFolio's Select2 focusser approach
+        DOM shows: #s2id_autogen1 (focusser) and #receivable_payment_cash_gl_account_id (hidden select)
+        """
+        try:
+            print(f"🏦 Selecting cash account: {value}")
+            
+            # Click the Select2 focusser for cash account
+            focusser_selector = "#s2id_autogen1"
+            await self.page.wait_for_selector(focusser_selector, timeout=5000, state="visible")
+            await self.page.click(focusser_selector)
+            await self.page.wait_for_timeout(1000)
+            
+            # Look for the search input that appears after clicking
+            search_selectors = [
+                "#s2id_autogen1_search",  # Expected pattern based on tenant field
+                "input[id*='s2id_autogen1'][id$='_search']",
+                ".select2-dropdown input[type='text']",
+                ".select2-search input"
+            ]
+            
+            search_found = False
+            for search_selector in search_selectors:
+                try:
+                    await self.page.wait_for_selector(search_selector, timeout=3000, state="visible")
+                    await self.page.fill(search_selector, value)
+                    await self.page.wait_for_timeout(1000)
+                    print(f"✅ Typed '{value}' in cash account search: {search_selector}")
+                    search_found = True
+                    break
+                except:
+                    continue
+            
+            if not search_found:
+                # Fallback: try typing in the focusser directly
+                await self.page.type(focusser_selector, value, delay=100)
+                await self.page.wait_for_timeout(1000)
+            
+            # Try to select from results
+            await self._select_from_dropdown_results(value)
+            
+        except Exception as e:
+            print(f"❌ Failed to select cash account: {e}")
+            raise e
+    
+    async def choose_payment_type(self, value: str):
+        """
+        Select payment type using AppFolio's Select2 focusser approach  
+        DOM shows: #s2id_autogen2 (focusser) and #receivable_payment_additional_data_attributes_alternative_payment_type (hidden select)
+        """
+        try:
+            print(f"💳 Selecting payment type: {value}")
+            
+            # Click the Select2 focusser for payment type
+            focusser_selector = "#s2id_autogen2"
+            await self.page.wait_for_selector(focusser_selector, timeout=5000, state="visible")
+            await self.page.click(focusser_selector)
+            await self.page.wait_for_timeout(1000)
+            
+            # Look for the search input that appears after clicking
+            search_selectors = [
+                "#s2id_autogen2_search",  # Expected pattern based on tenant field
+                "input[id*='s2id_autogen2'][id$='_search']",
+                ".select2-dropdown input[type='text']",
+                ".select2-search input"
+            ]
+            
+            search_found = False
+            for search_selector in search_selectors:
+                try:
+                    await self.page.wait_for_selector(search_selector, timeout=3000, state="visible")
+                    await self.page.fill(search_selector, value)
+                    await self.page.wait_for_timeout(1000)
+                    print(f"✅ Typed '{value}' in payment type search: {search_selector}")
+                    search_found = True
+                    break
+                except:
+                    continue
+            
+            if not search_found:
+                # Fallback: try typing in the focusser directly
+                await self.page.type(focusser_selector, value, delay=100)
+                await self.page.wait_for_timeout(1000)
+            
+            # Try to select from results
+            await self._select_from_dropdown_results(value)
+            
+        except Exception as e:
+            print(f"❌ Failed to select payment type: {e}")
+            raise e
+    
+    async def _select_from_dropdown_results(self, value: str):
+        """Helper method to select from Select2 dropdown results"""
+        try:
+            # Wait for results to appear
+            results_selectors = [
+                ".select2-results li",
+                ".select2-results__option", 
+                ".select2-dropdown li",
+                "[role='option']"
+            ]
+            
+            for results_selector in results_selectors:
+                try:
+                    await self.page.wait_for_selector(results_selector, timeout=3000)
+                    results = await self.page.query_selector_all(results_selector)
+                    
+                    for result in results:
+                        result_text = await result.text_content()
+                        if result_text and (value.lower() in result_text.lower() or 
+                                          result_text.lower() in value.lower()):
+                            print(f"✅ Found matching option: {result_text}")
+                            await result.click()
+                            return True
+                    
+                    # If no exact match, click first result
+                    if results:
+                        first_text = await results[0].text_content()
+                        print(f"⚠️ No exact match, selecting first: {first_text}")
+                        await results[0].click()
+                        return True
+                        
+                except:
+                    continue
+            
+            # Last resort: press Enter
+            print("⚠️ No results found, trying Enter key")
+            await self.page.keyboard.press("Enter")
+            
+        except Exception as e:
+            print(f"⚠️ Error selecting from results: {e}")
+            await self.page.keyboard.press("Enter")
+    
     async def navigate_to_website(self, url: str, wait_timeout: int = 30000):
         """Navigate to the specified website"""
         try:
@@ -281,11 +424,13 @@ class FormFiller:
                         # Wait for element to be available (but may be hidden)
                         await self.page.wait_for_selector(css_selector, timeout=10000, state="attached")
                         
-                        # Special handling for AppFolio dropdowns  
+                        # Special handling for AppFolio dropdowns using specific focusser approach 
                         if excel_column == "TenantName" and ("receivable_payment_payer_id" in css_selector or "select2" in css_selector):
                             await self._handle_appfolio_tenant_search(css_selector, value)
-                        elif excel_column in ["CashAccount", "PaymentType"]:
-                            await self.select2_pick_by_select_id(css_selector, value, excel_column)
+                        elif excel_column == "CashAccount":
+                            await self.choose_cash_account(value)
+                        elif excel_column == "PaymentType":
+                            await self.choose_payment_type(value)
                         else:
                             # Check if element is input, textarea, or select
                             # Handle multiple selectors separated by commas
