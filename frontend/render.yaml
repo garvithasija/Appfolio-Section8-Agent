@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: section8-frontend
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./build
+    pullRequestPreviewsEnabled: false
+    branch: main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REACT_APP_API_URL
+        value: https://section8-appfolio-agent.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
