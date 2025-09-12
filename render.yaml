@@ -12,6 +12,8 @@ services:
         value: "/app/worker:/app/backend"
       - key: PORT
         value: "8000"
+      - key: RENDER
+        value: "true"
     disk:
       name: data
       mountPath: /app/uploads

@@ -14,8 +14,13 @@ class FormFiller:
         self.page: Page = None
         self.results = []
         
-    async def initialize(self, headless: bool = True):
+    async def initialize(self, headless: bool = None):
         """Initialize Playwright browser"""
+        # Auto-detect headless mode if not specified
+        if headless is None:
+            # Default to headless in production environments
+            headless = os.environ.get('RENDER', False) or os.environ.get('DOCKER', False) or True
+            
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
         try:
             self.playwright = await async_playwright().start()
@@ -23,15 +28,29 @@ class FormFiller:
             
             # Check browser installation
             import subprocess
-            result = subprocess.run(['python', '-m', 'playwright', 'install', '--help'], 
+            import sys
+            python_cmd = sys.executable
+            result = subprocess.run([python_cmd, '-m', 'playwright', 'install', '--help'], 
                                   capture_output=True, text=True)
             print(f"Playwright install command available: {result.returncode == 0}")
             
             # Try to launch browser with additional debugging
             print("🔍 Attempting to launch Chromium...")
+            # Configure browser arguments for production deployment (Render, Docker, etc.)
+            browser_args = []
+            if headless:
+                browser_args = [
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--disable-extensions',
+                    '--disable-default-apps'
+                ]
+            
             self.browser = await self.playwright.chromium.launch(
                 headless=headless,
-                args=['--no-sandbox', '--disable-dev-shm-usage'] if headless else []
+                args=browser_args
             )
             print(f"✅ Browser launched (headless={headless})")
             context = await self.browser.new_context()
