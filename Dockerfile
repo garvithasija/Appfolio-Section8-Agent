@@ -1,7 +1,7 @@
 # Python backend with Playwright
 FROM python:3.11-slim
 
-# Install system dependencies for Playwright
+# Install system dependencies for Playwright and Xvfb virtual display
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     lsb-release \
     xdg-utils \
+    xvfb \
+    x11-utils \
+    x11vnc \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -59,6 +62,11 @@ RUN mkdir -p uploads screenshots job_results
 ENV PYTHONPATH="/app/worker:/app/backend"
 ENV PLAYWRIGHT_BROWSERS_PATH="/ms-playwright"
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="false"
+ENV DISPLAY=:99
+ENV XVFB_DISPLAY=:99
+ENV XVFB_SCREEN_WIDTH=1920
+ENV XVFB_SCREEN_HEIGHT=1080
+ENV XVFB_SCREEN_DEPTH=24
 
 # Expose port
 EXPOSE 8000
@@ -69,5 +77,19 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Start command
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Create startup script for Xvfb support
+RUN echo '#!/bin/bash\n\
+echo "Starting Xvfb virtual display..."\n\
+Xvfb $DISPLAY -screen 0 ${XVFB_SCREEN_WIDTH}x${XVFB_SCREEN_HEIGHT}x${XVFB_SCREEN_DEPTH} -ac +extension GLX +render -noreset &\n\
+XVFB_PID=$!\n\
+echo "Xvfb started with PID: $XVFB_PID on display $DISPLAY"\n\
+\n\
+# Wait for Xvfb to be ready\n\
+sleep 2\n\
+\n\
+echo "Starting application..."\n\
+exec python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Start command with Xvfb support
+CMD ["/app/start.sh"]

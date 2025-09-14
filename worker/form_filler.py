@@ -18,15 +18,27 @@ class FormFiller:
         """Initialize Playwright browser"""
         # Auto-detect headless mode if not specified
         if headless is None:
-            # Default to headless in production environments (Docker, Render, or no DISPLAY)
+            # Check for environment-based configuration
             is_render = os.environ.get('RENDER', '').lower() in ('true', '1', 'yes')
             is_docker = os.environ.get('DOCKER', '').lower() in ('true', '1', 'yes') 
             has_display = os.environ.get('DISPLAY', '') != ''
-            # Force headless in containerized environments or when no display is available
-            headless = is_render or is_docker or not has_display
+            force_headed = os.environ.get('PLAYWRIGHT_HEADED', '').lower() in ('true', '1', 'yes')
+            has_xvfb = os.environ.get('XVFB_DISPLAY', '') != '' or os.environ.get('DISPLAY', '') == ':99'
+            
+            # Decision logic for headless mode:
+            # 1. If PLAYWRIGHT_HEADED=true and we have a display (real or virtual), use headed mode
+            # 2. If in containerized environment but no display available, use headless
+            # 3. If local development with display, allow headed mode
+            if force_headed and has_display:
+                headless = False  # Use headed mode with virtual display
+            elif (is_render or is_docker) and not has_display:
+                headless = True   # Force headless in containers without display
+            else:
+                headless = not has_display  # Use headless if no display available
             
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
         print(f"🔍 Environment detection: RENDER={os.environ.get('RENDER', 'not set')}, DOCKER={os.environ.get('DOCKER', 'not set')}, DISPLAY={os.environ.get('DISPLAY', 'not set')}")
+        print(f"🔍 Display configuration: PLAYWRIGHT_HEADED={os.environ.get('PLAYWRIGHT_HEADED', 'not set')}, XVFB_DISPLAY={os.environ.get('XVFB_DISPLAY', 'not set')}")
         try:
             self.playwright = await async_playwright().start()
             print("✅ Playwright started")

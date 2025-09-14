@@ -14,6 +14,8 @@ services:
         value: "8000"
       - key: RENDER
         value: "true"
+      - key: PLAYWRIGHT_HEADED
+        value: "true"
     disk:
       name: data
       mountPath: /app/uploads
