@@ -33,17 +33,20 @@ class FormFiller:
             # 4. Containers without display: Force headless mode
             
             is_local_dev = not (is_render or is_docker)
+            is_macos = os.name == 'posix' and 'darwin' in os.uname().sysname.lower()
             
-            if is_local_dev and has_display:
-                headless = False  # Local development - default to headed for visual debugging
-            elif force_headed and has_display:
-                headless = False  # Production with explicit headed mode request + virtual display
-            elif (is_render or is_docker) and not has_display:
-                headless = True   # Production containers without display - force headless
+            if is_local_dev:
+                # Local development - default to headed mode for visual debugging
+                # On macOS, DISPLAY is not typically set but GUI works fine
+                headless = False if (has_display or is_macos) else True
+            elif force_headed and (has_display or has_xvfb):
+                headless = False  # Production with explicit headed mode request + display/virtual display
+            elif (is_render or is_docker) and not has_display and not has_xvfb:
+                headless = True   # Production containers without any display - force headless
             elif (is_render or is_docker):
                 headless = not force_headed  # Production with display - respect PLAYWRIGHT_HEADED setting
             else:
-                headless = not has_display  # Fallback: headless if no display available
+                headless = not (has_display or is_macos)  # Fallback: headed on macOS or with display
             
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
         print(f"🔍 Environment detection: RENDER={os.environ.get('RENDER', 'not set')}, DOCKER={os.environ.get('DOCKER', 'not set')}, DISPLAY={os.environ.get('DISPLAY', 'not set')}")
@@ -80,6 +83,22 @@ class FormFiller:
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor'
                 ]
+            else:
+                # For headed mode, add macOS-specific arguments to make browser visible
+                import sys
+                if sys.platform == 'darwin':  # macOS
+                    browser_args = [
+                        '--no-first-run',
+                        '--new-window',  # Force new window
+                        '--disable-background-mode',  # Prevent background mode
+                        '--disable-background-timer-throttling',  # Prevent throttling
+                        '--disable-backgrounding-occluded-windows',  # Keep window active
+                        '--disable-renderer-backgrounding',  # Keep renderer active
+                        '--force-color-profile=srgb',  # Force color profile for visibility
+                        '--disable-features=TranslateUI'  # Reduce distractions
+                    ]
+                else:
+                    browser_args = ['--no-first-run']
             
             # Try browser installation if launch fails
             try:
@@ -110,6 +129,26 @@ class FormFiller:
             context = await self.browser.new_context()
             print("✅ Browser context created")
             self.page = await context.new_page()
+            
+            # Force browser window to foreground on macOS
+            if not headless:
+                import sys
+                if sys.platform == 'darwin':  # macOS
+                    try:
+                        # Navigate to a blank page first to ensure window is created
+                        await self.page.goto('about:blank')
+                        await asyncio.sleep(0.5)  # Give window time to appear
+                        
+                        # Use AppleScript to bring Chromium to the front
+                        import subprocess
+                        subprocess.run([
+                            'osascript', '-e', 
+                            'tell application "Chromium" to activate'
+                        ], capture_output=True, timeout=2)
+                        print("🎯 Brought Chromium window to foreground")
+                    except Exception as e:
+                        print(f"⚠️ Could not bring browser to foreground: {e}")
+                        
             print("✅ New page created - browser should be visible!")
         except Exception as e:
             print(f"❌ Browser initialization failed: {e}")
