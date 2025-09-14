@@ -35,11 +35,16 @@ COPY backend/requirements.txt ./backend/
 COPY worker/requirements.txt ./worker/
 RUN pip install --no-cache-dir -r backend/requirements.txt -r worker/requirements.txt
 
-# Install Playwright browsers after pip install
-RUN python -m playwright install --with-deps chromium && \
+# Install Playwright browsers with system dependencies
+RUN python -m playwright install-deps chromium && \
+    python -m playwright install chromium && \
     python -c "import playwright; print('Playwright version:', playwright.__version__)" && \
-    ls -la /root/.cache/ms-playwright/ || echo "Browser cache not found" && \
-    find /root -name "*chromium*" -type d 2>/dev/null | head -5
+    # Create and set permissions for browser directories
+    mkdir -p /ms-playwright && \
+    chmod -R 755 /ms-playwright /root/.cache/ms-playwright || true && \
+    # Verify browser was installed
+    find /root/.cache/ms-playwright -name "*chromium*" -type d | head -3 || true && \
+    find /ms-playwright -name "*chromium*" -type d | head -3 || true
 
 # Copy application code
 COPY backend/ ./backend/
@@ -52,6 +57,8 @@ RUN mkdir -p uploads screenshots job_results
 
 # Set environment variables
 ENV PYTHONPATH="/app/worker:/app/backend"
+ENV PLAYWRIGHT_BROWSERS_PATH="/ms-playwright"
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="false"
 
 # Expose port
 EXPOSE 8000

@@ -45,13 +45,36 @@ class FormFiller:
                     '--disable-gpu',
                     '--no-first-run',
                     '--disable-extensions',
-                    '--disable-default-apps'
+                    '--disable-default-apps',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
                 ]
             
-            self.browser = await self.playwright.chromium.launch(
-                headless=headless,
-                args=browser_args
-            )
+            # Try browser installation if launch fails
+            try:
+                self.browser = await self.playwright.chromium.launch(
+                    headless=headless,
+                    args=browser_args
+                )
+            except Exception as browser_error:
+                print(f"❌ Initial browser launch failed: {browser_error}")
+                print("🔄 Attempting to install browsers...")
+                try:
+                    # Try to install browsers if they're missing
+                    result = subprocess.run([python_cmd, '-m', 'playwright', 'install', 'chromium'], 
+                                          capture_output=True, text=True, timeout=300)
+                    print(f"Browser install result: {result.returncode == 0}")
+                    if result.stderr:
+                        print(f"Install stderr: {result.stderr}")
+                    
+                    # Retry browser launch
+                    self.browser = await self.playwright.chromium.launch(
+                        headless=headless,
+                        args=browser_args
+                    )
+                except Exception as install_error:
+                    print(f"❌ Browser install/retry failed: {install_error}")
+                    raise RuntimeError(f"Failed to initialize Chromium browser: {browser_error}") from install_error
             print(f"✅ Browser launched (headless={headless})")
             context = await self.browser.new_context()
             print("✅ Browser context created")
