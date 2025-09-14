@@ -17,7 +17,8 @@ class FormFiller:
     async def initialize(self, headless: bool = None):
         """Initialize Playwright browser"""
         # Auto-detect headless mode if not specified
-        if headless is None:
+        auto_detected = headless is None
+        if auto_detected:
             # Check for environment-based configuration
             is_render = os.environ.get('RENDER', '').lower() in ('true', '1', 'yes')
             is_docker = os.environ.get('DOCKER', '').lower() in ('true', '1', 'yes') 
@@ -26,19 +27,32 @@ class FormFiller:
             has_xvfb = os.environ.get('XVFB_DISPLAY', '') != '' or os.environ.get('DISPLAY', '') == ':99'
             
             # Decision logic for headless mode:
-            # 1. If PLAYWRIGHT_HEADED=true and we have a display (real or virtual), use headed mode
-            # 2. If in containerized environment but no display available, use headless
-            # 3. If local development with display, allow headed mode
-            if force_headed and has_display:
-                headless = False  # Use headed mode with virtual display
+            # 1. Local development: Default to headed mode (headless=False) when DISPLAY available
+            # 2. Production with PLAYWRIGHT_HEADED=true: Use headed mode with virtual display
+            # 3. Production without PLAYWRIGHT_HEADED: Use efficient headless mode
+            # 4. Containers without display: Force headless mode
+            
+            is_local_dev = not (is_render or is_docker)
+            
+            if is_local_dev and has_display:
+                headless = False  # Local development - default to headed for visual debugging
+            elif force_headed and has_display:
+                headless = False  # Production with explicit headed mode request + virtual display
             elif (is_render or is_docker) and not has_display:
-                headless = True   # Force headless in containers without display
+                headless = True   # Production containers without display - force headless
+            elif (is_render or is_docker):
+                headless = not force_headed  # Production with display - respect PLAYWRIGHT_HEADED setting
             else:
-                headless = not has_display  # Use headless if no display available
+                headless = not has_display  # Fallback: headless if no display available
             
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
         print(f"🔍 Environment detection: RENDER={os.environ.get('RENDER', 'not set')}, DOCKER={os.environ.get('DOCKER', 'not set')}, DISPLAY={os.environ.get('DISPLAY', 'not set')}")
         print(f"🔍 Display configuration: PLAYWRIGHT_HEADED={os.environ.get('PLAYWRIGHT_HEADED', 'not set')}, XVFB_DISPLAY={os.environ.get('XVFB_DISPLAY', 'not set')}")
+        if auto_detected:  # Only show decision logic if auto-detected
+            env_type = "local development" if not (is_render or is_docker) else "production container"
+            display_status = "with display" if has_display else "no display"
+            headed_override = f", PLAYWRIGHT_HEADED={force_headed}" if (is_render or is_docker) else ""
+            print(f"🎯 Decision: {env_type} ({display_status}{headed_override}) → headless={headless}")
         try:
             self.playwright = await async_playwright().start()
             print("✅ Playwright started")
