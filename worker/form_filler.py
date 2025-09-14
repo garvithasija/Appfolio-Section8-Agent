@@ -18,10 +18,15 @@ class FormFiller:
         """Initialize Playwright browser"""
         # Auto-detect headless mode if not specified
         if headless is None:
-            # Default to headless in production environments
-            headless = os.environ.get('RENDER', False) or os.environ.get('DOCKER', False) or True
+            # Default to headless in production environments (Docker, Render, or no DISPLAY)
+            is_render = os.environ.get('RENDER', '').lower() in ('true', '1', 'yes')
+            is_docker = os.environ.get('DOCKER', '').lower() in ('true', '1', 'yes') 
+            has_display = os.environ.get('DISPLAY', '') != ''
+            # Force headless in containerized environments or when no display is available
+            headless = is_render or is_docker or not has_display
             
         print(f"🚀 Initializing Playwright browser (headless={headless})...")
+        print(f"🔍 Environment detection: RENDER={os.environ.get('RENDER', 'not set')}, DOCKER={os.environ.get('DOCKER', 'not set')}, DISPLAY={os.environ.get('DISPLAY', 'not set')}")
         try:
             self.playwright = await async_playwright().start()
             print("✅ Playwright started")

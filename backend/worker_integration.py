@@ -21,7 +21,7 @@ class WorkerIntegration:
         self.processor = None
         self.jobs_status = {}
         
-    async def initialize_worker(self, headless: bool = True):
+    async def initialize_worker(self, headless: bool = None):
         """Initialize the Playwright worker"""
         if JobProcessor is None:
             raise RuntimeError("Worker dependencies not installed")
@@ -50,7 +50,7 @@ class WorkerIntegration:
         try:
             # Create dedicated processor for this job
             job_processor = JobProcessor()
-            await job_processor.initialize(headless=False)  # Visual mode
+            await job_processor.initialize(headless=None)  # Auto-detect based on environment
             print(f"✅ Dedicated browser created for job {job_id}")
             
             # Start job in background with dedicated processor
@@ -177,7 +177,7 @@ class WorkerIntegration:
 # Global worker integration instance
 worker_integration = WorkerIntegration()
 
-async def initialize_worker_integration(headless: bool = False):  # Changed to False for visual mode
+async def initialize_worker_integration(headless: bool = None):  # Auto-detect based on environment
     """Initialize the global worker integration"""
     try:
         await worker_integration.initialize_worker(headless)
